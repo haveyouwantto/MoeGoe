@@ -1,0 +1,4 @@
+{
+    "model": "../models/voistock/402_epochs.pth",
+    "config": "../models/voistock/config.json"
+}
