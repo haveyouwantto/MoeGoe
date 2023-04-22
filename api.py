@@ -26,7 +26,7 @@ def get_property(request, property, default=None):
     return value if value is not None else default
 
 
-cfg = json.loads(open('config.json').read())
+cfg = json.loads(open('config.json',encoding='utf-8').read())
 model = cfg['model']
 config = cfg['config']
 
@@ -81,7 +81,24 @@ def tts():
 
 @app.route("/list")
 def list_speaker():
-    return speakers
+    if type(speakers) == list:
+        sp = []
+        for i, value in enumerate(speakers):
+            sp.append({
+                'name':value,
+                'id':i
+            })
+
+        return sp
+    
+    else:
+        my_dict_list = []
+
+        for key, value in dict(speakers).items():
+            my_dict = {"name": key, "id": value}
+            my_dict_list.append(my_dict)
+
+        return my_dict_list
 
 
 app.run(host='0.0.0.0')
