@@ -6,7 +6,7 @@ import commons
 from torch import no_grad, LongTensor
 import json
 
-from flask import Flask, request
+from flask import Flask, request, jsonify
 
 from io import BytesIO
 
@@ -24,6 +24,25 @@ def get_text(text, hps, cleaned=False):
 def get_property(request, property, default=None):
     value = request.args.get(property)
     return value if value is not None else default
+
+def cleaner_to_languages(cleaner):
+    # Mapping of cleaners to supported languages
+    cleaners_map = {
+        'chinese_cleaners': ['zh'],
+        'chinese_dialect_cleaners': ['zh'],
+        'cjke_cleaners': ['zh', 'ko', 'ja', 'en'],
+        'cjke_cleaners2': ['zh', 'ko', 'ja', 'en'],
+        'cjks_cleaners': ['zh', 'ko', 'ja', 'sa'],
+        'japanese_cleaners': ['ja'],
+        'japanese_cleaners2': ['ja'],
+        'korean_cleaners': ['ko'],
+        'sanskrit_cleaners': ['sa'],
+        'shanghainese_cleaners': ['zh'],
+        'thai_cleaners': ['th'],
+        'zh_ja_mixture_cleaners': ['zh', 'ja']
+    }
+    # Return the list of supported languages for the given cleaner name
+    return cleaners_map.get(cleaner, [])
 
 
 cfg = json.loads(open('config.json',encoding='utf-8').read())
@@ -51,9 +70,32 @@ utils.load_checkpoint(model, net_g_ms)
 
 app = Flask(__name__)
 
+speaker_list = []
+
+if type(speakers) == list:
+    for i, value in enumerate(speakers):
+        speaker_list.append({
+            'name':value,
+            'id':i
+        })
+else:
+    for key, value in dict(speakers).items():
+        my_dict = {"name": key, "id": value}
+        speaker_list.append(my_dict)
+
+ids = set()
+for speaker in speaker_list:
+    ids.add(speaker['id'])
+
+def has_speaker(id):
+    return id in ids
+
 @app.route('/tts')
 def tts():
     speaker = int(get_property(request, 'speaker', '0').strip())
+    if not has_speaker(speaker):
+        return "Speaker not found", 404
+
     text = get_property(request, 'text').strip()
     length_scale = float(get_property(request, 'length_scale', 1.1))
     noise_scale = float(get_property(request, 'noise_scale', 0.667))
@@ -61,8 +103,8 @@ def tts():
 
     stn_tst = get_text(text, hps_ms)
     with no_grad():
-        x_tst = stn_tst.cuda().unsqueeze(0)
-        x_tst_lengths = LongTensor([stn_tst.size(0)]).cuda()
+        x_tst = stn_tst.unsqueeze(0).cuda()
+        x_tst_lengths = LongTensor([stn_tst.size(0)]).cuda() 
         sid = LongTensor([speaker]).cuda()  ## speaker id
         audio = net_g_ms.infer(
             x_tst,
@@ -81,24 +123,7 @@ def tts():
 
 @app.route("/list")
 def list_speaker():
-    if type(speakers) == list:
-        sp = []
-        for i, value in enumerate(speakers):
-            sp.append({
-                'name':value,
-                'id':i
-            })
-
-        return sp
-    
-    else:
-        my_dict_list = []
-
-        for key, value in dict(speakers).items():
-            my_dict = {"name": key, "id": value}
-            my_dict_list.append(my_dict)
-
-        return my_dict_list
+    return jsonify(speaker_list)
 
 
-app.run(host='0.0.0.0')
+app.run(host='0.0.0.0', port=51817)
