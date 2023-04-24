@@ -25,24 +25,25 @@ def get_property(request, property, default=None):
     value = request.args.get(property)
     return value if value is not None else default
 
+# Mapping of cleaners to supported languages
+cleaners_map = {
+    'chinese_cleaners': ['zh'],
+    'chinese_dialect_cleaners': ['zh'],
+    'cjke_cleaners': ['zh', 'ko', 'ja', 'en'],
+    'cjke_cleaners2': ['zh', 'ko', 'ja', 'en'],
+    'cjks_cleaners': ['zh', 'ko', 'ja', 'sa'],
+    'japanese_cleaners': ['ja'],
+    'japanese_cleaners2': ['ja'],
+    'korean_cleaners': ['ko'],
+    'sanskrit_cleaners': ['sa'],
+    'shanghainese_cleaners': ['zh'],
+    'thai_cleaners': ['th'],
+    'zh_ja_mixture_cleaners': ['zh', 'ja']
+}
+
 def cleaner_to_languages(cleaner):
-    # Mapping of cleaners to supported languages
-    cleaners_map = {
-        'chinese_cleaners': ['zh'],
-        'chinese_dialect_cleaners': ['zh'],
-        'cjke_cleaners': ['zh', 'ko', 'ja', 'en'],
-        'cjke_cleaners2': ['zh', 'ko', 'ja', 'en'],
-        'cjks_cleaners': ['zh', 'ko', 'ja', 'sa'],
-        'japanese_cleaners': ['ja'],
-        'japanese_cleaners2': ['ja'],
-        'korean_cleaners': ['ko'],
-        'sanskrit_cleaners': ['sa'],
-        'shanghainese_cleaners': ['zh'],
-        'thai_cleaners': ['th'],
-        'zh_ja_mixture_cleaners': ['zh', 'ja']
-    }
     # Return the list of supported languages for the given cleaner name
-    return cleaners_map.get(cleaner, [])
+    return cleaners_map.get(cleaner)
 
 
 cfg = json.loads(open('config.json',encoding='utf-8').read())
@@ -121,9 +122,21 @@ def tts():
                 format='WAVEX')
     return buffer.getvalue(), 200, {"Content-Type": "audio/x-wav"}
 
+# deprecated
 @app.route("/list")
 def list_speaker():
     return jsonify(speaker_list)
 
+@app.route("/info")
+def get_info():
+    info = {
+        "languages":[],
+        "speakers":speaker_list
+    }
+    lang_set =set()
+    for cleaner in hps_ms.data.text_cleaners:
+        lang_set.update(cleaner_to_languages(cleaner))
+    info['languages'] = list(lang_set)
+    return jsonify(info)
 
 app.run(host='0.0.0.0', port=51817)

@@ -1,4 +1,4 @@
 {
-    "model": "../models/voistock/402_epochs.pth",
-    "config": "../models/voistock/config.json"
+    "model": "../models/SayaSS-zh-ja/G_953000.pth",
+    "config": "../models/SayaSS-zh-ja/config.json"
 }

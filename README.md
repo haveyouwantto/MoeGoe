@@ -23,21 +23,23 @@ This endpoint generates a WAV file from the given text using the specified speak
 
 If the request is successful, the response will be a WAV file containing the generated audio. The audio will be in 16-bit PCM format, with a sample rate of 22050 Hz and a single channel (mono).
 
-### `GET /list`
+### `GET /info`
 
-This endpoint returns a list of available speakers.
+This endpoint returns server information.
 
 #### Request
 
 - Method: `GET`
-- URL: `/list`
+- URL: `/info`
 
 #### Response
 
-If the request is successful, the response will be a JSON array containing a list of speakers in the following format:
+If the request is successful, the response will be a JSON object in the following format:
 
 ```json
-[
+{
+  "languages": ["zh", "en"],
+  "speakers":[
   {
     "name": "Speaker A",
     "id": 0
@@ -51,8 +53,10 @@ If the request is successful, the response will be a JSON array containing a lis
     "id": 2
   }
 ]
+}
 ```
 
-Each object in the array represents a single speaker and contains the following fields:
-- `name` (string): the name of the speaker.
-- `id` (integer): a unique identifier for the speaker.
+- `languages`: an array of language codes (strings) supported by the server. For example: `["zh", "en"]`.
+- `speakers`: an array of objects representing available speakers. Each object has the following properties:
+  - `name`: the name of the speaker (string).
+  - `id`: the ID of the speaker (integer).
